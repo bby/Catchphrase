@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Javascript Catch Phrase</title>
+	<meta name="author" content="Tom Burton">
+	<!-- Date: 2011-08-04 -->
+	<style type="text/css">
+	#game-area {position: relative;}
+	</style>
+	<script type="text/javascript">
+	var term;
+	var catchphrase = {
+		init: function(img_src){
+			
+			this.guess_img = new Image();
+			this.guess_img.src = img_src;
+			this.guess_img.onload = function() { 
+				catchphrase.event_setup();
+			}
+			//
+			this.number_of_tiles = 4;
+			this.board_width = this.guess_img.width;
+			this.board_height = this.guess_img.height;
+			//
+			this.game_area = document.getElementById("game-area");
+			this.points_score = document.getElementById("points");
+			this.count_down = document.getElementById("count-down");
+			//
+			this.total_number_of_tiles = 0;
+			this.tiles = [];
+			this.total_points = 100;
+			this.points = 100;
+			this.tile_reveal_interval = null;
+			this.count_down_interval = null;
+			//
+			this.current_player = 1;
+			this.guess_value = term;
+			
+		},
+		event_setup: function() {
+			document.getElementById("start").addEventListener('click',function() {
+				catchphrase.build_board();
+			},false);
+			document.getElementById("guess").addEventListener('click',function() {
+				catchphrase.guess();
+			},false);
+			document.onkeypress = function(e) {
+				if(e.which == 97) {
+					document.getElementById("messages").innerHTML = 'Player 1 Guess';
+				} else if(e.which == 108) {
+					document.getElementById("messages").innerHTML = 'Player 2 Guess';
+				}
+			}
+		},
+		build_board: function() {
+			this.points_score.innerHTML = this.total_points;
+			tile_width = this.board_width / this.number_of_tiles;
+			tile_height = this.board_height / this.number_of_tiles;
+			this.total_number_of_tiles = this.number_of_tiles*this.number_of_tiles;
+			y = 0;
+			x = 0;
+			//
+			for(var i=0;i<this.total_number_of_tiles;i++) {
+				x+= tile_width;
+				//
+				if(i % this.number_of_tiles == 0 && i != 0) { y+=tile_height; }
+				if(i % this.number_of_tiles == 0) { x = 0; }
+				//
+				tile = document.createElement("div");
+				tile.style.backgroundColor = "green";
+				tile.style.width = tile_width + "px";
+				tile.style.height = tile_height + "px";
+				tile.style.position = "absolute";
+				tile.style.top = y + "px";
+				tile.style.left = x + "px";
+				tile.innerHTML = i;
+				//
+				this.tiles.push(tile);
+				this.game_area.appendChild(tile);
+			}
+			//
+			this.game_area.style.width = this.board_width+"px";
+			this.game_area.style.height = this.board_height+"px";
+			this.game_area.style.backgroundImage = 'url("'+this.guess_img.src+'")';
+			this.game_area.style.backgroundRepeat = 'no-repeat';
+			//
+			this.start_reveal();
+		},
+		start_reveal: function() {
+			this.tile_reveal_interval = setInterval("catchphrase.tile_reveal()", 1000);
+		},
+		tile_reveal: function() {
+			if(this.points==this.number_of_tiles) { 
+				alert(this.guess_value); 
+				clearInterval(this.tile_reveal_interval); 
+			} else {
+				random_number=Math.floor(Math.floor(Math.random()*this.tiles.length));
+				this.tiles[random_number].style.display = "none";
+				this.tiles.splice(random_number, 1);
+				this.points -= Math.floor(this.total_points/this.total_number_of_tiles);
+				this.points_score.innerHTML = this.points;
+			}
+		},
+		guess: function() {
+			if(document.getElementById("guess-value").value == this.guess_value) {
+				alert('right');
+				clearInterval(this.tile_reveal_interval);
+				window.location.reload();
+			} else {
+				alert('wrong');
+			}
+			// count_down_from = 2;
+			// 			this.count_down.innerHTML = count_down_from;
+			// 			this.count_down_interval = setInterval(function() {
+			// 				if(count_down_from!=0) {
+			// 					count_down_from-=1;
+			// 					catchphrase.count_down.innerHTML = count_down_from;
+			// 				} else {
+			// 					catchphrase.start_reveal();
+			// 					clearInterval(catchphrase.count_down_interval);
+			// 				}
+			// 			}, 1000);
+			// 			clearInterval(this.tile_reveal_interval);
+		}
+		
+	}
+	
+	function jsonFlickrApi(rsp) {
+		if (rsp.stat != "ok"){
+		 return;
+		}
+		//http://farm7.static.flickr.com/6069/6046786369_39e152f26f_z.jpg
+		catchphrase.init("http://farm7.static.flickr.com/"+rsp.photos.photo[0].server+"/"+rsp.photos.photo[0].id+"_"+rsp.photos.photo[0].secret+"_z.jpg");
+
+	}
+	
+	// jsonFlickrApi({"photos":{"page":1, "pages":6426332, "perpage":1, "total":"6426332", "photo":[{"id":"6047216728", "owner":"61260300@N02", "secret":"e03663741c", "server":"6210", "farm":7, "title":"DSC_9967", "ispublic":1, "isfriend":0, "isfamily":0}]}, "stat":"ok"})
+	document.addEventListener( "DOMContentLoaded", function() {
+		var request = false;
+		var terms = ['ghandi','abraham lincoln','david cameron','lady gaga'];
+		try {
+		  request = new XMLHttpRequest();
+		} catch (failed) {
+		  request = false;
+		}
+		if (!request) {
+		  alert("Error initializing XMLHttpRequest!");
+		} else {
+		  term = terms[Math.floor(Math.random()*terms.length)];
+		  request.open("GET", "http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=f7151f66cd15f5fd286d7e38498999f0&tags="+term+"&per_page=1&format=json", true);
+		  request.onreadystatechange = function() {
+			if(request.readyState == 4) {
+				eval(request.response);
+			}
+		  }
+		  request.send(null);
+		}
+	}, false );
+	</script>
+</head>
+<body>
+<div id="trace-output"></div>
+<div id="hud">
+<p>Player 1 = A / Player 2 = L</p>
+<div id="messages"></div>
+<div id="points">0</div>
+<div id="count-down">0</div>
+<div id="start">Start</div>
+<input id="guess-value" /> 
+<div id="guess">&raquo; Guess</div>
+
+</div>
+
+<div id="game-area"></div>
+</body>
+</html>
